@@ -1,11 +1,12 @@
 .{
-    .name = "euc-jis-2004-zig",
+    .name = .euc_jis_2004_zig,
     .version = "0.0.2",
     .minimum_zig_version = "0.13.0",
+    .fingerprint = 0x8fe695630ad09933,
     .dependencies = .{
         .protest = .{
-            .url = "git+https://github.com/ibokuri/protest#e7a9bc39c213985814a904b38e4506a6fbd537b2",
-            .hash = "122014736a658ee30f82e5c6e3038c95727690fe01fced2791b213dba10c65fba7c5",
+            .url = "git+https://github.com/waynezhang/protest#da9b761a44ec7ec954dcad6fdd05c35bfe1ae19e",
+            .hash = "protest-0.1.0-AAAAAIe7AABASwcA3m5cCT8P8iZW3Zx09lTc37tAK1mQ",
         },
     },
     .paths = .{
