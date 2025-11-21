@@ -188,45 +188,32 @@ fn append(output: *std.ArrayList(u8), n: u21) !void {
     try output.appendSlice(buf[0..len]);
 }
 
-const require = @import("protest").require;
-
 test "decode" {
-    const allocator = std.testing.allocator;
-
     const efile = try std.fs.cwd().openFile("testdata/euc-jis-2004-with-char-u8.txt", .{});
     defer efile.close();
 
     const cfile = try std.fs.cwd().openFile("testdata/euc-jis-2004-with-char.txt", .{});
     defer cfile.close();
 
-    var ebuf_reader = std.io.bufferedReader(efile.reader());
-    var cbuf_reader = std.io.bufferedReader(cfile.reader());
+    var ebuf_reader_buffer: [8 * 1024]u8 = undefined;
+    var ebuf_reader = efile.reader(&ebuf_reader_buffer);
 
-    var ebuf_stream = ebuf_reader.reader();
-    var cbuf_stream = cbuf_reader.reader();
-
-    var expect_buf = std.ArrayList(u8).init(allocator);
-    defer expect_buf.deinit();
-    var convert_buf = std.ArrayList(u8).init(allocator);
-    defer convert_buf.deinit();
+    var cbuf_reader_buffer: [8 * 1024]u8 = undefined;
+    var cbuf_reader = cfile.reader(&cbuf_reader_buffer);
 
     var line_buf = [_]u8{0} ** 4096;
 
     while (true) {
-        _ = ebuf_stream.streamUntilDelimiter(expect_buf.writer(), '\n', null) catch |err| switch (err) {
-            error.EndOfStream => break,
-            else => try require.fail("Failed to read file"),
-        };
-        _ = cbuf_stream.streamUntilDelimiter(convert_buf.writer(), '\n', null) catch |err| switch (err) {
-            error.EndOfStream => break,
-            else => try require.fail("Failed to read file"),
-        };
+        const expect_line = try ebuf_reader.interface.takeDelimiter('\n') orelse &[_]u8{};
+        const convert_line = try cbuf_reader.interface.takeDelimiter('\n') orelse &[_]u8{};
 
-        const line = try convertEucJpToUtf8(convert_buf.items, &line_buf);
+        if (convert_line.len == 0) {
+            try std.testing.expectEqual(expect_line.len, 0);
+            break;
+        }
 
-        try require.equal(expect_buf.items, line);
-        expect_buf.clearRetainingCapacity();
-        convert_buf.clearRetainingCapacity();
+        const line = try convertEucJpToUtf8(convert_line, &line_buf);
+        try std.testing.expectEqualStrings(expect_line, line);
     }
 }
 
@@ -239,32 +226,24 @@ test "decode alloc" {
     const cfile = try std.fs.cwd().openFile("testdata/euc-jis-2004-with-char.txt", .{});
     defer cfile.close();
 
-    var ebuf_reader = std.io.bufferedReader(efile.reader());
-    var cbuf_reader = std.io.bufferedReader(cfile.reader());
+    var ebuf_reader_buffer: [8 * 1024]u8 = undefined;
+    var ebuf_reader = efile.reader(&ebuf_reader_buffer);
 
-    var ebuf_stream = ebuf_reader.reader();
-    var cbuf_stream = cbuf_reader.reader();
-
-    var expect_buf = std.ArrayList(u8).init(allocator);
-    defer expect_buf.deinit();
-    var convert_buf = std.ArrayList(u8).init(allocator);
-    defer convert_buf.deinit();
+    var cbuf_reader_buffer: [8 * 1024]u8 = undefined;
+    var cbuf_reader = cfile.reader(&cbuf_reader_buffer);
 
     while (true) {
-        _ = ebuf_stream.streamUntilDelimiter(expect_buf.writer(), '\n', null) catch |err| switch (err) {
-            error.EndOfStream => break,
-            else => try require.fail("Failed to read file"),
-        };
-        _ = cbuf_stream.streamUntilDelimiter(convert_buf.writer(), '\n', null) catch |err| switch (err) {
-            error.EndOfStream => break,
-            else => try require.fail("Failed to read file"),
-        };
+        const expect_line = try ebuf_reader.interface.takeDelimiter('\n') orelse &[_]u8{};
+        const convert_line = try cbuf_reader.interface.takeDelimiter('\n') orelse &[_]u8{};
 
-        const line = try convertEucJpToUtf8Alloc(allocator, convert_buf.items);
+        if (convert_line.len == 0) {
+            try std.testing.expectEqual(expect_line.len, 0);
+            break;
+        }
+
+        const line = try convertEucJpToUtf8Alloc(allocator, convert_line);
         defer allocator.free(line);
 
-        try require.equal(expect_buf.items, line);
-        expect_buf.clearRetainingCapacity();
-        convert_buf.clearRetainingCapacity();
+        try std.testing.expectEqualStrings(expect_line, line);
     }
 }
