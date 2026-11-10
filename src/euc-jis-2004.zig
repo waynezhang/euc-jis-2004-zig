@@ -189,19 +189,21 @@ fn append(output: *std.ArrayList(u8), n: u21) !void {
 }
 
 test "decode" {
-    const efile = try std.fs.cwd().openFile("testdata/euc-jis-2004-with-char-u8.txt", .{});
-    defer efile.close();
+    const io = std.testing.io;
 
-    const cfile = try std.fs.cwd().openFile("testdata/euc-jis-2004-with-char.txt", .{});
-    defer cfile.close();
+    const efile = try std.Io.Dir.cwd().openFile(io, "testdata/euc-jis-2004-with-char-u8.txt", .{});
+    defer efile.close(io);
+
+    const cfile = try std.Io.Dir.cwd().openFile(io, "testdata/euc-jis-2004-with-char.txt", .{});
+    defer cfile.close(io);
 
     var ebuf_reader_buffer: [8 * 1024]u8 = undefined;
-    var ebuf_reader = efile.reader(&ebuf_reader_buffer);
+    var ebuf_reader = efile.reader(io, &ebuf_reader_buffer);
 
     var cbuf_reader_buffer: [8 * 1024]u8 = undefined;
-    var cbuf_reader = cfile.reader(&cbuf_reader_buffer);
+    var cbuf_reader = cfile.reader(io, &cbuf_reader_buffer);
 
-    var line_buf = [_]u8{0} ** 4096;
+    var line_buf: [4096]u8 = @splat(0);
 
     while (true) {
         const expect_line = try ebuf_reader.interface.takeDelimiter('\n') orelse &[_]u8{};
@@ -218,19 +220,21 @@ test "decode" {
 }
 
 test "decode alloc" {
+    const io = std.testing.io;
+
     const allocator = std.testing.allocator;
 
-    const efile = try std.fs.cwd().openFile("testdata/euc-jis-2004-with-char-u8.txt", .{});
-    defer efile.close();
+    const efile = try std.Io.Dir.cwd().openFile(io, "testdata/euc-jis-2004-with-char-u8.txt", .{});
+    defer efile.close(io);
 
-    const cfile = try std.fs.cwd().openFile("testdata/euc-jis-2004-with-char.txt", .{});
-    defer cfile.close();
+    const cfile = try std.Io.Dir.cwd().openFile(io, "testdata/euc-jis-2004-with-char.txt", .{});
+    defer cfile.close(io);
 
     var ebuf_reader_buffer: [8 * 1024]u8 = undefined;
-    var ebuf_reader = efile.reader(&ebuf_reader_buffer);
+    var ebuf_reader = efile.reader(io, &ebuf_reader_buffer);
 
     var cbuf_reader_buffer: [8 * 1024]u8 = undefined;
-    var cbuf_reader = cfile.reader(&cbuf_reader_buffer);
+    var cbuf_reader = cfile.reader(io, &cbuf_reader_buffer);
 
     while (true) {
         const expect_line = try ebuf_reader.interface.takeDelimiter('\n') orelse &[_]u8{};
