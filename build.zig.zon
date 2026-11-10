@@ -1,7 +1,7 @@
 .{
     .name = .euc_jis_2004_zig,
     .version = "0.0.3",
-    .minimum_zig_version = "0.15.2",
+    .minimum_zig_version = "0.17.0",
     .fingerprint = 0x8fe695630ad09933,
     .dependencies = .{},
     .paths = .{
